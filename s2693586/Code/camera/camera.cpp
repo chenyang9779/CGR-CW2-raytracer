@@ -1,8 +1,8 @@
 #include "camera.h"
 #include <cmath>
 
-Camera::Camera(const Vector3 &position, const Vector3 &lookAt, const Vector3 &up, float fov, int width, int height)
-    : position(position), fov(fov), width(width), height(height)
+Camera::Camera(const Vector3 &position, const Vector3 &lookAt, const Vector3 &up, float fov, int width, int height, float exposure)
+    : position(position), fov(fov), width(width), height(height), exposure(exposure)
 {
     forward = (lookAt - position).normalize();
     right = forward.cross(up).normalize();

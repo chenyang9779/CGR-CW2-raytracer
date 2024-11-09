@@ -7,7 +7,7 @@
 class Camera
 {
 public:
-    Camera(const Vector3 &position, const Vector3 &lookAt, const Vector3 &up, float fov, int width, int height);
+    Camera(const Vector3 &position, const Vector3 &lookAt, const Vector3 &up, float fov, int width, int height, float exposure);
     Ray generateRay(float x, float y) const;
 
 private:
@@ -20,6 +20,9 @@ private:
     int height;
     float aspectRatio;
     float scale;
+    
+public:
+    float exposure;
 };
 
 #endif // CAMERA_H

@@ -36,6 +36,7 @@ SceneData readSceneFromJson(const std::string &fileName)
         float fov = config["camera"]["fov"];
         int width = config["camera"]["width"];
         int height = config["camera"]["height"];
+        float exposure = config["camera"]["exposure"];
 
         // Determine the render mode
         RenderMode renderMode = RenderMode::BINARY;
@@ -49,7 +50,7 @@ SceneData readSceneFromJson(const std::string &fileName)
         }
 
         // Initialize the camera
-        Camera camera(cameraPosition, lookAt, upVector, fov, width, height);
+        Camera camera(cameraPosition, lookAt, upVector, fov, width, height, exposure);
 
         // Create SceneData object with render mode
         SceneData sceneData(camera, width, height, renderMode);
@@ -60,9 +61,8 @@ SceneData readSceneFromJson(const std::string &fileName)
             for (const auto &light : config["scene"]["lightsources"])
             {
                 Vector3 position = Vector3(light["position"][0], light["position"][1], light["position"][2]);
-                Vector3 color = Vector3(light["intensity"][0], light["intensity"][1], light["intensity"][2]);
-                float intensity = std::max({color.x, color.y, color.z}); // Assuming the max channel as intensity.
-                sceneData.lights.emplace_back(position, color, intensity);
+                Vector3 intensity = Vector3(light["intensity"][0], light["intensity"][1], light["intensity"][2]);
+                sceneData.lights.emplace_back(position, intensity);
             }
         }
 

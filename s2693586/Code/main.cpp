@@ -9,6 +9,7 @@
 #include "camera/light.h"
 #include "shading/blinn_phong.cpp"
 #include "geometry/geometry.cpp"
+#include "tone/tone_mapping.cpp"
 
 void renderScene(const Camera &camera, const std::vector<Sphere> &spheres, const std::vector<Cylinder> &cylinders,
                  const std::vector<Triangle> &triangles, const std::vector<Light> &lights,
@@ -70,10 +71,13 @@ void renderScene(const Camera &camera, const std::vector<Sphere> &spheres, const
                     color = blinnPhongShading(closestIntersection, ray, lights, spheres, cylinders, triangles);
                 }
 
+                // Apply tone mapping to the color using the camera's exposure value
+                Vector3 mappedColor = toneMap(color, camera.exposure);
+
                 // Convert color from [0, 1] range to [0, 255] for RGB and store in image buffer
-                image[index] = static_cast<uint8_t>(std::min(color.x * 255.0f, 255.0f)); // R
-                image[index + 1] = static_cast<uint8_t>(std::min(color.y * 255.0f, 255.0f)); // G
-                image[index + 2] = static_cast<uint8_t>(std::min(color.z * 255.0f, 255.0f)); // B
+                image[index] = static_cast<uint8_t>(std::min(mappedColor.x * 255.0f, 255.0f)); // R
+                image[index + 1] = static_cast<uint8_t>(std::min(mappedColor.y * 255.0f, 255.0f)); // G
+                image[index + 2] = static_cast<uint8_t>(std::min(mappedColor.z * 255.0f, 255.0f)); // B
             }
         }
     }
@@ -91,6 +95,7 @@ void renderScene(const Camera &camera, const std::vector<Sphere> &spheres, const
         std::cerr << "Failed to open output file." << std::endl;
     }
 }
+
 
 int main(int argc, char *argv[])
 {

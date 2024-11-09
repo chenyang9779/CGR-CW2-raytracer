@@ -10,9 +10,9 @@ Vector3 blinnPhongShading(const Intersection &intersection, const Ray &ray, cons
 
     for (const auto &light : lights)
     {
-        // Calculate the light direction and distance to the light
+        // Calculate the direction towards the light
         Vector3 lightDir = (light.position - intersection.point).normalize();
-        float maxDistance = (light.position - intersection.point).length();
+        float distanceToLight = (light.position - intersection.point).length();
 
         // Create a shadow ray from the intersection point to the light
         Vector3 shadowOrigin = intersection.point + normal * 0.001f; // Offset to avoid self-intersection
@@ -23,7 +23,7 @@ Vector3 blinnPhongShading(const Intersection &intersection, const Ray &ray, cons
         for (const auto &sphere : spheres)
         {
             Intersection shadowIntersection = sphere.intersect(shadowRay);
-            if (shadowIntersection.hit && shadowIntersection.distance < maxDistance)
+            if (shadowIntersection.hit && shadowIntersection.distance < distanceToLight)
             {
                 inShadow = true;
                 break;
@@ -33,7 +33,7 @@ Vector3 blinnPhongShading(const Intersection &intersection, const Ray &ray, cons
         for (const auto &cylinder : cylinders)
         {
             Intersection shadowIntersection = cylinder.intersect(shadowRay);
-            if (shadowIntersection.hit && shadowIntersection.distance < maxDistance)
+            if (shadowIntersection.hit && shadowIntersection.distance < distanceToLight)
             {
                 inShadow = true;
                 break;
@@ -43,32 +43,38 @@ Vector3 blinnPhongShading(const Intersection &intersection, const Ray &ray, cons
         for (const auto &triangle : triangles)
         {
             Intersection shadowIntersection = triangle.intersect(shadowRay);
-            if (shadowIntersection.hit && shadowIntersection.distance < maxDistance)
+            if (shadowIntersection.hit && shadowIntersection.distance < distanceToLight)
             {
                 inShadow = true;
                 break;
             }
         }
 
-        // If the point is in shadow, only add the ambient component
-        Vector3 ambient = material.kd * material.diffuseColor * light.color * light.intensity;
+        // Ambient component: always present, regardless of shadows
+        Vector3 ambient = material.kd * material.diffuseColor * light.intensity;
+
+        // If the point is in shadow, add only the ambient component
         if (inShadow)
         {
             color += ambient;
-            continue;
+            continue; // Skip the diffuse and specular components
         }
 
-        // Add ambient, diffuse, and specular components
+        // Diffuse component (Lambertian reflection)
         float diff = std::max(normal.dot(lightDir), 0.0f);
-        Vector3 diffuse = material.kd * diff * material.diffuseColor * light.color * light.intensity;
+        Vector3 diffuse = material.kd * diff * material.diffuseColor * light.intensity;
 
+        // Specular component (Blinn-Phong reflection)
         Vector3 halfDir = (viewDir + lightDir).normalize();
         float spec = std::pow(std::max(normal.dot(halfDir), 0.0f), material.specularExponent);
-        Vector3 specular = material.ks * spec * material.specularColor * light.color * light.intensity;
+        Vector3 specular = material.ks * spec * material.specularColor * light.intensity;
 
+        // Accumulate the color components
         color += ambient + diffuse + specular;
     }
 
     return color.clamp(0.0f, 1.0f); // Clamp the color between 0 and 1
 }
+
+
 
