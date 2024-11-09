@@ -13,6 +13,16 @@ public:
     Vector3() : x(0), y(0), z(0) {}
     Vector3(float x, float y, float z) : x(x), y(y), z(z) {}
 
+
+    Vector3 clamp(float minValue, float maxValue) const
+    {
+        return Vector3(
+            std::max(minValue, std::min(x, maxValue)),
+            std::max(minValue, std::min(y, maxValue)),
+            std::max(minValue, std::min(z, maxValue))
+        );
+    }
+    
     // Basic arithmetic operators
     Vector3 operator+(const Vector3 &v) const { return Vector3(x + v.x, y + v.y, z + v.z); }
     Vector3 operator-(const Vector3 &v) const { return Vector3(x - v.x, y - v.y, z - v.z); }

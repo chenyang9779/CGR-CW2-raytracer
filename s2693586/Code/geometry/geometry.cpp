@@ -29,6 +29,7 @@ Intersection Sphere::intersect(const Ray &ray) const
             result.distance = t;
             result.point = ray.origin + ray.direction * t;
             result.normal = (result.point - center).normalize();
+            result.material = material;
         }
     }
     return result;
@@ -39,9 +40,12 @@ Intersection Cylinder::intersect(const Ray &ray) const
     Intersection result;
 
     // Implementing a basic cylinder intersection logic (finite cylinder)
+    Vector3 axisNormalized = axis.normalize();
     Vector3 oc = ray.origin - center;
-    Vector3 d = ray.direction - axis * ray.direction.dot(axis);
-    Vector3 o = oc - axis * oc.dot(axis);
+
+    // Decompose the ray direction and origin components relative to the cylinder axis
+    Vector3 d = ray.direction - axisNormalized * ray.direction.dot(axisNormalized);
+    Vector3 o = oc - axisNormalized * oc.dot(axisNormalized);
 
     float a = d.dot(d);
     float b = 2.0f * o.dot(d);
@@ -49,44 +53,93 @@ Intersection Cylinder::intersect(const Ray &ray) const
     float discriminant = b * b - 4 * a * c;
 
     // Check for intersection with the infinite cylinder
-    if (discriminant < 0)
+    float tCylinder = -1;
+    if (discriminant >= 0)
     {
-        return result; // No intersection
+        float sqrtDiscriminant = std::sqrt(discriminant);
+        float t1 = (-b - sqrtDiscriminant) / (2.0f * a);
+        float t2 = (-b + sqrtDiscriminant) / (2.0f * a);
+
+        // Choose the nearest positive t value
+        tCylinder = (t1 > 0) ? t1 : ((t2 > 0) ? t2 : -1);
+        if (tCylinder > 0)
+        {
+            // Check if the intersection is within the height bounds of the finite cylinder
+            Vector3 point = ray.origin + ray.direction * tCylinder;
+            float projectionLength = (point - center).dot(axisNormalized);
+
+            if (projectionLength >= -height && projectionLength <= height)
+            {
+                // If we have a valid intersection, fill the result
+                result.hit = true;
+                result.distance = tCylinder;
+                result.point = point;
+
+                // Calculate the normal at the intersection point
+                Vector3 pointOnAxis = center + axisNormalized * projectionLength;
+                result.normal = (result.point - pointOnAxis).normalize();
+            }
+        }
     }
 
-    float sqrtDiscriminant = std::sqrt(discriminant);
-    float t1 = (-b - sqrtDiscriminant) / (2.0f * a);
-    float t2 = (-b + sqrtDiscriminant) / (2.0f * a);
+    // Adding checks for intersections with the top and bottom caps of the cylinder
+    float tCapTop = -1;
+    float tCapBottom = -1;
 
-    // Choose the nearest positive t value
-    float t = (t1 > 0) ? t1 : ((t2 > 0) ? t2 : -1);
-    if (t < 0)
+    Vector3 bottomCenter = center - axisNormalized * (height);
+    Vector3 topCenter = center + axisNormalized * (height);
+
+    // Ray-plane intersection for the bottom cap
+    float denomBottom = ray.direction.dot(axisNormalized);
+    if (std::abs(denomBottom) > 1e-6) // Avoid division by zero for rays parallel to the plane
     {
-        return result; // No valid intersection
+        float t = (bottomCenter - ray.origin).dot(axisNormalized) / denomBottom;
+        if (t > 0)
+        {
+            Vector3 point = ray.origin + ray.direction * t;
+            if ((point - bottomCenter).length() <= radius)
+            {
+                tCapBottom = t;
+            }
+        }
     }
 
-    // Check if the intersection is within the height bounds of the finite cylinder
-    Vector3 point = ray.origin + ray.direction * t;
-    float projectionLength = (point - center).dot(axis.normalize()); // Ensure axis is normalized
-
-    // Add a small tolerance (epsilon) to account for floating-point precision errors
-    // const float epsilon = 1e-4f;
-    if (projectionLength < -height || projectionLength > height)
+    // Ray-plane intersection for the top cap
+    float denomTop = ray.direction.dot(axisNormalized);
+    if (std::abs(denomTop) > 1e-6) // Avoid division by zero for rays parallel to the plane
     {
-        return result; // Intersection is outside the bounds of the finite cylinder
+        float t = (topCenter - ray.origin).dot(axisNormalized) / denomTop;
+        if (t > 0)
+        {
+            Vector3 point = ray.origin + ray.direction * t;
+            if ((point - topCenter).length() <= radius)
+            {
+                tCapTop = t;
+            }
+        }
     }
 
-    // If we have a valid intersection, fill the result
-    result.hit = true;
-    result.distance = t;
-    result.point = point;
+    // Determine if any cap intersections are closer than the cylinder side intersection
+    if (tCapBottom > 0 && (tCapBottom < result.distance || !result.hit))
+    {
+        result.hit = true;
+        result.distance = tCapBottom;
+        result.point = ray.origin + ray.direction * tCapBottom;
+        result.normal = -axisNormalized; // Normal pointing outwards for the bottom cap
+    }
 
-    // Calculate the normal at the intersection point
-    Vector3 pointOnAxis = center + axis * projectionLength;
-    result.normal = (result.point - pointOnAxis).normalize();
+    if (tCapTop > 0 && (tCapTop < result.distance || !result.hit))
+    {
+        result.hit = true;
+        result.distance = tCapTop;
+        result.point = ray.origin + ray.direction * tCapTop;
+        result.normal = axisNormalized; // Normal pointing outwards for the top cap
+    }
 
+    result.material = material;
     return result;
 }
+
 
 Intersection Triangle::intersect(const Ray &ray) const
 {
@@ -127,5 +180,6 @@ Intersection Triangle::intersect(const Ray &ray) const
         result.normal = edge1.cross(edge2).normalize();
     }
 
+    result.material = material;
     return result;
 }
