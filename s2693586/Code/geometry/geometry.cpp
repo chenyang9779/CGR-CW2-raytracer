@@ -22,7 +22,7 @@ Intersection Sphere::intersect(const Ray &ray) const
         float t1 = (-b - sqrtDiscriminant) / (2.0f * a);
         float t2 = (-b + sqrtDiscriminant) / (2.0f * a);
 
-        float t = (t1 > 0) ? t1 : ((t2 > 0) ? t2 : -1);
+        float t = (t1 > 0 && t2 > 0) ? std::min(t1, t2) : ((t1 > 0) ? t1 : t2);
         if (t > 0)
         {
             result.hit = true;
@@ -78,6 +78,7 @@ Intersection Cylinder::intersect(const Ray &ray) const
                 // Calculate the normal at the intersection point
                 Vector3 pointOnAxis = center + axisNormalized * projectionLength;
                 result.normal = (result.point - pointOnAxis).normalize();
+                result.material = material;
             }
         }
     }
@@ -126,6 +127,7 @@ Intersection Cylinder::intersect(const Ray &ray) const
         result.distance = tCapBottom;
         result.point = ray.origin + ray.direction * tCapBottom;
         result.normal = -axisNormalized; // Normal pointing outwards for the bottom cap
+        result.material = material;
     }
 
     if (tCapTop > 0 && (tCapTop < result.distance || !result.hit))
@@ -134,12 +136,11 @@ Intersection Cylinder::intersect(const Ray &ray) const
         result.distance = tCapTop;
         result.point = ray.origin + ray.direction * tCapTop;
         result.normal = axisNormalized; // Normal pointing outwards for the top cap
+        result.material = material;
     }
 
-    result.material = material;
     return result;
 }
-
 
 Intersection Triangle::intersect(const Ray &ray) const
 {
@@ -151,11 +152,10 @@ Intersection Triangle::intersect(const Ray &ray) const
     Vector3 h = ray.direction.cross(edge2);
     float a = edge1.dot(h);
 
-    if (std::fabs(a) < 1e-6)
+    if (a > -1e-6 && a < 1e-6)
     {
         return result; // Ray is parallel to the triangle
     }
-
     float f = 1.0 / a;
     Vector3 s = ray.origin - v0;
     float u = f * s.dot(h);
@@ -173,13 +173,17 @@ Intersection Triangle::intersect(const Ray &ray) const
 
     float t = f * edge2.dot(q);
     if (t > 1e-6)
-    { // Intersection point is along the ray direction
+    {
         result.hit = true;
         result.distance = t;
         result.point = ray.origin + ray.direction * t;
-        result.normal = edge1.cross(edge2).normalize();
+
+        // Ensure normal points in the opposite direction of the ray
+        Vector3 computedNormal = edge1.cross(edge2).normalize();
+        result.normal = (ray.direction.dot(computedNormal) < 0) ? computedNormal : -computedNormal;
+
+        result.material = material;
     }
 
-    result.material = material;
     return result;
 }

@@ -5,7 +5,7 @@
 #include "json_reader.cpp"
 #include "camera/camera.cpp"
 #include "camera/ray.h"
-#include "camera/material.h"
+#include "material/material.h"
 #include "camera/light.h"
 #include "shading/blinn_phong.cpp"
 #include "geometry/geometry.cpp"

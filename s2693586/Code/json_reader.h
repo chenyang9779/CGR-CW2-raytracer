@@ -6,7 +6,7 @@
 #include "nlohmann/json.hpp" // Assuming you're using the nlohmann/json library
 #include "camera/camera.h"
 #include "camera/light.h"
-#include "camera/material.h"
+#include "material/material.h"
 #include "geometry/geometry.h"
 
 using json = nlohmann::json;

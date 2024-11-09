@@ -1,10 +1,34 @@
 #include "blinn_phong.h"
+#include <cmath>
 
-Vector3 blinnPhongShading(const Intersection &intersection, const Ray &ray, const std::vector<Light> &lights, 
+// // Function to calculate refraction direction
+// Vector3 calculateRefraction(const Vector3& incident, const Vector3& normal, float eta)
+// {
+//     float cosi = std::clamp(incident.dot(normal), -1.0f, 1.0f);
+//     float etai = 1, etat = eta;
+//     Vector3 n = normal;
+
+//     if (cosi < 0) {
+//         cosi = -cosi; // The ray is outside the material
+//     } else {
+//         std::swap(etai, etat); // The ray is inside the material
+//         n = -normal;
+//     }
+
+//     float etaRatio = etai / etat;
+//     float k = 1 - etaRatio * etaRatio * (1 - cosi * cosi);
+//     if (k < 0) {
+//         return Vector3(0, 0, 0); // Total internal reflection
+//     }
+//     return incident * etaRatio + n * (etaRatio * cosi - sqrtf(k));
+// }
+
+Vector3 blinnPhongShading(const Intersection &intersection, const Ray &ray, const std::vector<Light> &lights,
                           const std::vector<Sphere> &spheres, const std::vector<Cylinder> &cylinders, const std::vector<Triangle> &triangles,
                           int nbounces, Vector3 backgroundColor)
 {
-    if (nbounces <= 0) {
+    if (nbounces <= 0)
+    {
         return Vector3(0.0f, 0.0f, 0.0f); // Return black if max depth is reached
     }
 
@@ -60,14 +84,20 @@ Vector3 blinnPhongShading(const Intersection &intersection, const Ray &ray, cons
             continue;
         }
 
-        float diff = std::max(normal.dot(lightDir), 0.0f);
+        // Normalize the vectors for correct Blinn-Phong calculations
+        Vector3 viewDirNormalized = viewDir.normalize();
+        Vector3 lightDirNormalized = lightDir.normalize();
+
+        // Calculate the diffuse component
+        float diff = std::max(normal.dot(lightDirNormalized), 0.0f);
         Vector3 diffuse = material.kd * diff * material.diffuseColor * light.intensity;
 
-        Vector3 halfDir = (viewDir + lightDir).normalize();
+        // Calculate the halfway vector for Blinn-Phong specular highlights
+        Vector3 halfDir = (viewDirNormalized + lightDirNormalized).normalize();
         float spec = std::pow(std::max(normal.dot(halfDir), 0.0f), material.specularExponent);
-        
         Vector3 specular = material.ks * spec * material.specularColor * light.intensity;
 
+        // Accumulate the lighting components
         color += ambient + diffuse + specular;
     }
 
@@ -129,12 +159,56 @@ Vector3 blinnPhongShading(const Intersection &intersection, const Ray &ray, cons
         color = (1.0f - reflectivity) * color + reflectivity * reflectionColor;
     }
 
+    // Refraction component
+    // Vector3 refractionColor(0.0f, 0.0f, 0.0f);
+    // if (material.isRefractive && nbounces > 0)
+    // {
+    //     float eta = material.refractiveIndex;
+    //     Vector3 refractionDir = calculateRefraction(ray.direction, normal, eta);
+    //     if (refractionDir != Vector3(0.0f, 0.0f, 0.0f)) // Only proceed if not total internal reflection
+    //     {
+    //         Vector3 refractionOrigin = intersection.point - normal * 0.001f; // Offset to avoid self-intersection
+    //         Ray refractionRay(refractionOrigin, refractionDir.normalize());
 
+    //         Intersection closestRefractionIntersection;
+    //         closestRefractionIntersection.distance = std::numeric_limits<float>::max();
 
-    return color.clamp(0.0f, 1.0f); // Clamp the color between 0 and 1
+    //         for (const auto& sphere : spheres)
+    //         {
+    //             Intersection refractionIntersection = sphere.intersect(refractionRay);
+    //             if (refractionIntersection.hit && refractionIntersection.distance < closestRefractionIntersection.distance)
+    //             {
+    //                 closestRefractionIntersection = refractionIntersection;
+    //             }
+    //         }
+
+    //         for (const auto& cylinder : cylinders)
+    //         {
+    //             Intersection refractionIntersection = cylinder.intersect(refractionRay);
+    //             if (refractionIntersection.hit && refractionIntersection.distance < closestRefractionIntersection.distance)
+    //             {
+    //                 closestRefractionIntersection = refractionIntersection;
+    //             }
+    //         }
+
+    //         for (const auto& triangle : triangles)
+    //         {
+    //             Intersection refractionIntersection = triangle.intersect(refractionRay);
+    //             if (refractionIntersection.hit && refractionIntersection.distance < closestRefractionIntersection.distance)
+    //             {
+    //                 closestRefractionIntersection = refractionIntersection;
+    //             }
+    //         }
+
+    //         if (closestRefractionIntersection.hit)
+    //         {
+    //             refractionColor = blinnPhongShading(closestRefractionIntersection, refractionRay, lights, spheres, cylinders, triangles, nbounces - 1, backgroundColor);
+    //         }
+
+    //         refractionColor = refractionColor * (1.0f - fresnelEffect);
+    //         color = refractionColor;
+    //     }
+    // }
+
+    return color.clamp(0.0f, 1.0f);
 }
-
-
-
-
-

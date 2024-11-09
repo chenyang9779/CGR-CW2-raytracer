@@ -3,7 +3,7 @@
 
 #include "../camera/ray.h"
 #include "../camera/vector3.h"
-#include "../camera/material.h" // Include material and light definitions
+#include "../material/material.h" // Include material and light definitions
 #include "../camera/light.h"
 
 struct Intersection
