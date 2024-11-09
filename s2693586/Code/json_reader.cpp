@@ -55,6 +55,19 @@ SceneData readSceneFromJson(const std::string &fileName)
         // Create SceneData object with render mode
         SceneData sceneData(camera, width, height, renderMode);
 
+        if (config.contains("nbounces"))
+        {
+            sceneData.nbounces = config["nbounces"];
+        }
+
+        if (config.contains("scene") && config["scene"].contains("backgroundcolor"))
+        {
+            sceneData.backgroundColor = Vector3(
+                config["scene"]["backgroundcolor"][0],
+                config["scene"]["backgroundcolor"][1],
+                config["scene"]["backgroundcolor"][2]);
+        }
+        
         // Extract lights from JSON
         if (config.contains("scene") && config["scene"].contains("lightsources"))
         {

@@ -8,6 +8,6 @@
 #include "../camera/material.h"     // Include material definitions
 
 Vector3 blinnPhongShading(const Intersection &intersection, const Ray &ray, const std::vector<Light> &lights, 
-                          const std::vector<Sphere> &spheres, const std::vector<Cylinder> &cylinders, const std::vector<Triangle> &triangles);
+                          const std::vector<Sphere> &spheres, const std::vector<Cylinder> &cylinders, const std::vector<Triangle> &triangles, int nbounces, Vector3 backgroundColor);
 
 #endif // BLINN_PHONG_H
