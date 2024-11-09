@@ -31,35 +31,56 @@ Intersection Sphere::intersect(const Ray& ray) const {
 
 Intersection Cylinder::intersect(const Ray& ray) const {
     Intersection result;
-    
-    // Implementing a basic cylinder intersection logic (infinite cylinder)
+
+    // Implementing a basic cylinder intersection logic (finite cylinder)
     Vector3 oc = ray.origin - center;
     Vector3 d = ray.direction - axis * ray.direction.dot(axis);
     Vector3 o = oc - axis * oc.dot(axis);
-    
+
     float a = d.dot(d);
     float b = 2.0f * o.dot(d);
     float c = o.dot(o) - radius * radius;
     float discriminant = b * b - 4 * a * c;
 
+    // Check for intersection with the infinite cylinder
     if (discriminant < 0) {
         return result; // No intersection
-    } else {
-        float sqrtDiscriminant = std::sqrt(discriminant);
-        float t1 = (-b - sqrtDiscriminant) / (2.0f * a);
-        float t2 = (-b + sqrtDiscriminant) / (2.0f * a);
-
-        float t = (t1 > 0) ? t1 : ((t2 > 0) ? t2 : -1);
-        if (t > 0) {
-            result.hit = true;
-            result.distance = t;
-            result.point = ray.origin + ray.direction * t;
-            Vector3 pointOnAxis = center + axis * (result.point - center).dot(axis);
-            result.normal = (result.point - pointOnAxis).normalize();
-        }
     }
+
+    float sqrtDiscriminant = std::sqrt(discriminant);
+    float t1 = (-b - sqrtDiscriminant) / (2.0f * a);
+    float t2 = (-b + sqrtDiscriminant) / (2.0f * a);
+
+    // Choose the nearest positive t value
+    float t = (t1 > 0) ? t1 : ((t2 > 0) ? t2 : -1);
+    if (t < 0) {
+        return result; // No valid intersection
+    }
+
+    // Check if the intersection is within the height bounds of the finite cylinder
+    Vector3 point = ray.origin + ray.direction * t;
+    float projectionLength = (point - center).dot(axis.normalize()); // Ensure axis is normalized
+
+    // Add a small tolerance (epsilon) to account for floating-point precision errors
+    // const float epsilon = 1e-4f;
+    if (projectionLength < - height || projectionLength > height) {
+        return result; // Intersection is outside the bounds of the finite cylinder
+    }
+
+    // If we have a valid intersection, fill the result
+    result.hit = true;
+    result.distance = t;
+    result.point = point;
+
+    // Calculate the normal at the intersection point
+    Vector3 pointOnAxis = center + axis * projectionLength;
+    result.normal = (result.point - pointOnAxis).normalize();
+
     return result;
 }
+
+
+
 
 Intersection Triangle::intersect(const Ray& ray) const {
     Intersection result;

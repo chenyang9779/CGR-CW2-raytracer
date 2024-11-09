@@ -2,16 +2,19 @@
 #include <vector>
 #include <limits>
 #include <fstream>
-#include "json_reader.h"
-#include "camera/camera.h"
+#include "json_reader.cpp"
+#include "camera/camera.cpp"
 #include "camera/ray.h"
-#include "geometry/geometry.h"
+#include "geometry/geometry.cpp"
 
 void renderScene(const Camera& camera, const std::vector<Sphere>& spheres, const std::vector<Cylinder>& cylinders, const std::vector<Triangle>& triangles, int width, int height, const std::string& outputFileName) {
     std::vector<uint8_t> image(width * height * 3, 0);
 
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
+            int flippedX = width - 1 - x;
+
+            // Generate the ray as usual
             Ray ray = camera.generateRay(static_cast<float>(x), static_cast<float>(y));
             Intersection closestIntersection;
             closestIntersection.distance = std::numeric_limits<float>::max();
@@ -41,11 +44,11 @@ void renderScene(const Camera& camera, const std::vector<Sphere>& spheres, const
             }
 
             // Set pixel value (white for hit, black for no hit)
-            int index = (y * width + x) * 3;
+            int index = (y * width + flippedX) * 3;
             if (closestIntersection.hit) {
                 image[index] = 255;     // R
-                image[index + 1] = 255; // G
-                image[index + 2] = 255; // B
+                image[index + 1] = 0; // G
+                image[index + 2] = 0; // B
             }
         }
     }
