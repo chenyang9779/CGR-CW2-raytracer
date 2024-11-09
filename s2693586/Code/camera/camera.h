@@ -4,11 +4,11 @@
 #include "vector3.h"
 #include "ray.h"
 
-class Camera {
+class Camera
+{
 public:
-    Camera(const Vector3& position, const Vector3& lookAt, const Vector3& up, float fov, int width, int height);
+    Camera(const Vector3 &position, const Vector3 &lookAt, const Vector3 &up, float fov, int width, int height);
     Ray generateRay(float x, float y) const;
-
 
 private:
     Vector3 position;

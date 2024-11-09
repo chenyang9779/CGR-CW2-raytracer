@@ -6,6 +6,6 @@
 
 using json = nlohmann::json;
 
-json readJsonFile(const std::string& fileName);
+json readJsonFile(const std::string &fileName);
 
 #endif // JSON_READER_H

@@ -1,10 +1,8 @@
+# Minimum version of CMake
 cmake_minimum_required(VERSION 3.10)
-project(RayTracer)
 
-set(CMAKE_CXX_STANDARD 17)
+# Project name
+project(MyProject)
 
-# Add all source files
-add_executable(main main.cpp camera/camera.cpp geometry/geometry.cpp)
-
-# Link any necessary libraries (add any additional required libraries)
-target_link_libraries(main PRIVATE jsoncpp)
+# Add the executable (replace main.cpp with your source file)
+add_executable(MyProject main.cpp)

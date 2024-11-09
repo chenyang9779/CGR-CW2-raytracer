@@ -1,9 +1,10 @@
 #include "geometry.h"
 #include <cmath>
 
-Intersection Sphere::intersect(const Ray& ray) const {
+Intersection Sphere::intersect(const Ray &ray) const
+{
     Intersection result;
-    
+
     // Vector from ray origin to sphere center
     Vector3 oc = ray.origin - center;
     float a = ray.direction.dot(ray.direction);
@@ -11,15 +12,19 @@ Intersection Sphere::intersect(const Ray& ray) const {
     float c = oc.dot(oc) - radius * radius;
     float discriminant = b * b - 4 * a * c;
 
-    if (discriminant < 0) {
+    if (discriminant < 0)
+    {
         return result; // No intersection
-    } else {
+    }
+    else
+    {
         float sqrtDiscriminant = std::sqrt(discriminant);
         float t1 = (-b - sqrtDiscriminant) / (2.0f * a);
         float t2 = (-b + sqrtDiscriminant) / (2.0f * a);
 
         float t = (t1 > 0) ? t1 : ((t2 > 0) ? t2 : -1);
-        if (t > 0) {
+        if (t > 0)
+        {
             result.hit = true;
             result.distance = t;
             result.point = ray.origin + ray.direction * t;
@@ -29,7 +34,8 @@ Intersection Sphere::intersect(const Ray& ray) const {
     return result;
 }
 
-Intersection Cylinder::intersect(const Ray& ray) const {
+Intersection Cylinder::intersect(const Ray &ray) const
+{
     Intersection result;
 
     // Implementing a basic cylinder intersection logic (finite cylinder)
@@ -43,7 +49,8 @@ Intersection Cylinder::intersect(const Ray& ray) const {
     float discriminant = b * b - 4 * a * c;
 
     // Check for intersection with the infinite cylinder
-    if (discriminant < 0) {
+    if (discriminant < 0)
+    {
         return result; // No intersection
     }
 
@@ -53,7 +60,8 @@ Intersection Cylinder::intersect(const Ray& ray) const {
 
     // Choose the nearest positive t value
     float t = (t1 > 0) ? t1 : ((t2 > 0) ? t2 : -1);
-    if (t < 0) {
+    if (t < 0)
+    {
         return result; // No valid intersection
     }
 
@@ -63,7 +71,8 @@ Intersection Cylinder::intersect(const Ray& ray) const {
 
     // Add a small tolerance (epsilon) to account for floating-point precision errors
     // const float epsilon = 1e-4f;
-    if (projectionLength < - height || projectionLength > height) {
+    if (projectionLength < -height || projectionLength > height)
+    {
         return result; // Intersection is outside the bounds of the finite cylinder
     }
 
@@ -79,37 +88,39 @@ Intersection Cylinder::intersect(const Ray& ray) const {
     return result;
 }
 
-
-
-
-Intersection Triangle::intersect(const Ray& ray) const {
+Intersection Triangle::intersect(const Ray &ray) const
+{
     Intersection result;
-    
+
     // Möller–Trumbore intersection algorithm
     Vector3 edge1 = v1 - v0;
     Vector3 edge2 = v2 - v0;
     Vector3 h = ray.direction.cross(edge2);
     float a = edge1.dot(h);
 
-    if (std::fabs(a) < 1e-6) {
+    if (std::fabs(a) < 1e-6)
+    {
         return result; // Ray is parallel to the triangle
     }
 
     float f = 1.0 / a;
     Vector3 s = ray.origin - v0;
     float u = f * s.dot(h);
-    if (u < 0.0 || u > 1.0) {
+    if (u < 0.0 || u > 1.0)
+    {
         return result; // Intersection is outside of the triangle
     }
 
     Vector3 q = s.cross(edge1);
     float v = f * ray.direction.dot(q);
-    if (v < 0.0 || u + v > 1.0) {
+    if (v < 0.0 || u + v > 1.0)
+    {
         return result; // Intersection is outside of the triangle
     }
 
     float t = f * edge2.dot(q);
-    if (t > 1e-6) { // Intersection point is along the ray direction
+    if (t > 1e-6)
+    { // Intersection point is along the ray direction
         result.hit = true;
         result.distance = t;
         result.point = ray.origin + ray.direction * t;
@@ -118,4 +129,3 @@ Intersection Triangle::intersect(const Ray& ray) const {
 
     return result;
 }
-
