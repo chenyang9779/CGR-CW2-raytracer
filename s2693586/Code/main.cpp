@@ -67,7 +67,7 @@ void renderScene(const Camera &camera, const std::vector<Sphere> &spheres, const
                 else if (renderMode == RenderMode::PHONG)
                 {
                     // Phong shading: use Blinn-Phong shading to calculate color
-                    color = blinnPhongShading(closestIntersection, ray, lights);
+                    color = blinnPhongShading(closestIntersection, ray, lights, spheres, cylinders, triangles);
                 }
 
                 // Convert color from [0, 1] range to [0, 255] for RGB and store in image buffer
