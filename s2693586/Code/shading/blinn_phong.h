@@ -5,9 +5,16 @@
 #include "../geometry/geometry.h"   // Include geometry.h to use Intersection struct
 #include "../camera/ray.h"          // Include ray definition
 #include "../camera/light.h"        // Include light definitions
-#include "../material/material.h"     // Include material definitions
+#include "../material/material.h"   // Include material definitions
+#include "../bvh/bvh_node.h"        // Include BVHNode definitions
 
+// Function for Blinn-Phong shading without BVH
 Vector3 blinnPhongShading(const Intersection &intersection, const Ray &ray, const std::vector<Light> &lights, 
-                          const std::vector<Sphere> &spheres, const std::vector<Cylinder> &cylinders, const std::vector<Triangle> &triangles, int nbounces, Vector3 backgroundColor);
+                          const std::vector<Sphere> &spheres, const std::vector<Cylinder> &cylinders, 
+                          const std::vector<Triangle> &triangles, int nbounces, Vector3 backgroundColor);
+
+// Function for Blinn-Phong shading with BVH
+Vector3 blinnPhongShadingBVH(const Intersection &intersection, const Ray &ray, const std::vector<Light> &lights, 
+                             const BVHNode *root, int nbounces, const Vector3 &backgroundColor);
 
 #endif // BLINN_PHONG_H

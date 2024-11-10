@@ -13,16 +13,14 @@ public:
     Vector3() : x(0), y(0), z(0) {}
     Vector3(float x, float y, float z) : x(x), y(y), z(z) {}
 
-
     Vector3 clamp(float minValue, float maxValue) const
     {
         return Vector3(
             std::max(minValue, std::min(x, maxValue)),
             std::max(minValue, std::min(y, maxValue)),
-            std::max(minValue, std::min(z, maxValue))
-        );
+            std::max(minValue, std::min(z, maxValue)));
     }
-    
+
     // Basic arithmetic operators
     Vector3 operator+(const Vector3 &v) const { return Vector3(x + v.x, y + v.y, z + v.z); }
     Vector3 operator-(const Vector3 &v) const { return Vector3(x - v.x, y - v.y, z - v.z); }
@@ -103,6 +101,35 @@ public:
     {
         os << "(" << v.x << ", " << v.y << ", " << v.z << ")";
         return os;
+    }
+    float &operator[](int index)
+    {
+        switch (index)
+        {
+        case 0:
+            return x;
+        case 1:
+            return y;
+        case 2:
+            return z;
+        default:
+            throw std::out_of_range("Index out of range for Vector3");
+        }
+    }
+
+    const float &operator[](int index) const
+    {
+        switch (index)
+        {
+        case 0:
+            return x;
+        case 1:
+            return y;
+        case 2:
+            return z;
+        default:
+            throw std::out_of_range("Index out of range for Vector3");
+        }
     }
 };
 

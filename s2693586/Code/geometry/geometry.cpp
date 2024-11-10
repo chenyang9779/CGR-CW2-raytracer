@@ -35,6 +35,11 @@ Intersection Sphere::intersect(const Ray &ray) const
     return result;
 }
 
+AABB Sphere::boundingBox() const {
+    Vector3 radiusVec(radius, radius, radius);
+    return AABB(center - radiusVec, center + radiusVec);
+}
+
 Intersection Cylinder::intersect(const Ray &ray) const
 {
     Intersection result;
@@ -142,6 +147,19 @@ Intersection Cylinder::intersect(const Ray &ray) const
     return result;
 }
 
+// Cylinder bounding box implementation
+AABB Cylinder::boundingBox() const {
+    // Approximate AABB by extending the radius along the cylinder's height
+    Vector3 axisNormalized = axis.normalize();
+    Vector3 radiusVec(radius, radius, radius);
+    Vector3 minBound = center - radiusVec - axisNormalized * (height * 0.5f);
+    Vector3 maxBound = center + radiusVec + axisNormalized * (height * 0.5f);
+
+    return AABB(minBound, maxBound);
+}
+
+
+
 Intersection Triangle::intersect(const Ray &ray) const
 {
     Intersection result;
@@ -187,3 +205,22 @@ Intersection Triangle::intersect(const Ray &ray) const
 
     return result;
 }
+
+// Triangle bounding box implementation
+AABB Triangle::boundingBox() const {
+    // Calculate min and max bounds of the triangle vertices
+    Vector3 minBound(
+        std::min({v0.x, v1.x, v2.x}),
+        std::min({v0.y, v1.y, v2.y}),
+        std::min({v0.z, v1.z, v2.z})
+    );
+
+    Vector3 maxBound(
+        std::max({v0.x, v1.x, v2.x}),
+        std::max({v0.y, v1.y, v2.y}),
+        std::max({v0.z, v1.z, v2.z})
+    );
+
+    return AABB(minBound, maxBound);
+}
+
