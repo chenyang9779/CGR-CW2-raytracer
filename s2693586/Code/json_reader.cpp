@@ -95,6 +95,8 @@ SceneData readSceneFromJson(const std::string &fileName)
                     material.specularExponent = shape["material"]["specularexponent"];
                     material.isReflective = shape["material"]["isreflective"];
                     material.reflectivity = shape["material"]["reflectivity"];
+                    material.isRefractive = shape["material"]["isrefractive"];
+                    material.refractiveIndex = shape["material"]["refractiveindex"];
                 }
 
                 if (shape["type"] == "sphere")
