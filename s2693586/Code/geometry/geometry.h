@@ -20,7 +20,8 @@ struct Intersection
 };
 
 // Abstract Geometry base class
-class Geometry {
+class Geometry
+{
 public:
     virtual ~Geometry() {}
 
@@ -61,7 +62,7 @@ public:
 
     Intersection intersect(const Ray &ray) const override;
     AABB boundingBox() const override;
-    Vector3 centroid() const override { return center; } // Update with actual centroid calculation
+    Vector3 centroid() const override;
 };
 
 // Triangle class inheriting from Geometry

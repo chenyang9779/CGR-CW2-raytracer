@@ -149,16 +149,24 @@ Intersection Cylinder::intersect(const Ray &ray) const
 
 // Cylinder bounding box implementation
 AABB Cylinder::boundingBox() const {
-    // Approximate AABB by extending the radius along the cylinder's height
+    // Consider axis orientation and use trigonometry to find bounds in global coordinates
     Vector3 axisNormalized = axis.normalize();
     Vector3 radiusVec(radius, radius, radius);
-    Vector3 minBound = center - radiusVec - axisNormalized * (height * 0.5f);
-    Vector3 maxBound = center + radiusVec + axisNormalized * (height * 0.5f);
+    
+    // Calculate possible extremes in each direction
+    Vector3 minBound = center - axisNormalized * (height * 0.5f) - radiusVec;
+    Vector3 maxBound = center + axisNormalized * (height * 0.5f) + radiusVec;
 
-    return AABB(minBound, maxBound);
+    // Return an AABB that completely encloses the cylinder
+    return AABB(
+        Vector3(std::min(minBound.x, maxBound.x), std::min(minBound.y, maxBound.y), std::min(minBound.z, maxBound.z)),
+        Vector3(std::max(minBound.x, maxBound.x), std::max(minBound.y, maxBound.y), std::max(minBound.z, maxBound.z))
+    );
 }
 
-
+Vector3 Cylinder::centroid() const {
+    return center + (axis.normalize() * (height * 0.5f));
+}
 
 Intersection Triangle::intersect(const Ray &ray) const
 {
@@ -208,7 +216,6 @@ Intersection Triangle::intersect(const Ray &ray) const
 
 // Triangle bounding box implementation
 AABB Triangle::boundingBox() const {
-    // Calculate min and max bounds of the triangle vertices
     Vector3 minBound(
         std::min({v0.x, v1.x, v2.x}),
         std::min({v0.y, v1.y, v2.y}),
@@ -221,6 +228,15 @@ AABB Triangle::boundingBox() const {
         std::max({v0.z, v1.z, v2.z})
     );
 
+    // Expand the bounds slightly to avoid degenerate AABBs
+    const float epsilon = 1e-3f;
+    if (minBound == maxBound) {
+        minBound -= Vector3(epsilon, epsilon, epsilon);
+        maxBound += Vector3(epsilon, epsilon, epsilon);
+    }
+
     return AABB(minBound, maxBound);
 }
+
+
 

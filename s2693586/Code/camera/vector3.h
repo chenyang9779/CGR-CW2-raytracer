@@ -12,6 +12,7 @@ public:
     // Constructors
     Vector3() : x(0), y(0), z(0) {}
     Vector3(float x, float y, float z) : x(x), y(y), z(z) {}
+    Vector3(float value) : x(value), y(value), z(value) {}
 
     Vector3 clamp(float minValue, float maxValue) const
     {
@@ -25,14 +26,17 @@ public:
     Vector3 operator+(const Vector3 &v) const { return Vector3(x + v.x, y + v.y, z + v.z); }
     Vector3 operator-(const Vector3 &v) const { return Vector3(x - v.x, y - v.y, z - v.z); }
     Vector3 operator*(float scalar) const { return Vector3(x * scalar, y * scalar, z * scalar); }
-    Vector3 operator/(float scalar) const
-    {
-        if (scalar != 0)
-        {
-            return Vector3(x / scalar, y / scalar, z / scalar);
-        }
-        throw std::runtime_error("Division by zero in Vector3");
+    Vector3 operator/(float scalar) const {
+    if (this == nullptr) {
+        std::cerr << "Error: Invalid 'this' pointer in Vector3::operator/" << std::endl;
+        return Vector3(0, 0, 0);  // or handle as needed
     }
+    if (scalar == 0.0f) {
+        std::cerr << "Warning: Division by zero in Vector3::operator/." << std::endl;
+        return *this;  // or handle zero division as appropriate
+    }
+    return Vector3(x / scalar, y / scalar, z / scalar);
+}
 
     // Element-wise multiplication
     Vector3 operator*(const Vector3 &v) const { return Vector3(x * v.x, y * v.y, z * v.z); }
