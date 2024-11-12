@@ -26,17 +26,20 @@ public:
     Vector3 operator+(const Vector3 &v) const { return Vector3(x + v.x, y + v.y, z + v.z); }
     Vector3 operator-(const Vector3 &v) const { return Vector3(x - v.x, y - v.y, z - v.z); }
     Vector3 operator*(float scalar) const { return Vector3(x * scalar, y * scalar, z * scalar); }
-    Vector3 operator/(float scalar) const {
-    if (this == nullptr) {
-        std::cerr << "Error: Invalid 'this' pointer in Vector3::operator/" << std::endl;
-        return Vector3(0, 0, 0);  // or handle as needed
+    Vector3 operator/(float scalar) const
+    {
+        if (this == nullptr)
+        {
+            std::cerr << "Error: Invalid 'this' pointer in Vector3::operator/" << std::endl;
+            return Vector3(0, 0, 0); // or handle as needed
+        }
+        if (scalar == 0.0f)
+        {
+            std::cerr << "Warning: Division by zero in Vector3::operator/." << std::endl;
+            return *this; // or handle zero division as appropriate
+        }
+        return Vector3(x / scalar, y / scalar, z / scalar);
     }
-    if (scalar == 0.0f) {
-        std::cerr << "Warning: Division by zero in Vector3::operator/." << std::endl;
-        return *this;  // or handle zero division as appropriate
-    }
-    return Vector3(x / scalar, y / scalar, z / scalar);
-}
 
     // Element-wise multiplication
     Vector3 operator*(const Vector3 &v) const { return Vector3(x * v.x, y * v.y, z * v.z); }
@@ -134,6 +137,21 @@ public:
         default:
             throw std::out_of_range("Index out of range for Vector3");
         }
+    }
+
+    Vector3 operator/(const Vector3 &v) const
+    {
+        if (v.x == 0 || v.y == 0 || v.z == 0)
+        {
+            std::cerr << "Warning: Division by zero component in Vector3::operator/." << std::endl;
+            return *this; // or handle as appropriate
+        }
+        return Vector3(x / v.x, y / v.y, z / v.z);
+    }
+
+    float luminance() const
+    {
+        return 0.2126f * x + 0.7152f * y + 0.0722f * z;
     }
 };
 

@@ -4,6 +4,7 @@
 #include "../camera/vector3.h"
 #include "../camera/ray.h"
 #include <limits>
+#include <cmath>
 
 class AABB {
 public:
@@ -12,8 +13,8 @@ public:
 
     // Constructor initializing bounds to extreme values to allow proper expansion
     AABB() 
-        : minBounds(Vector3(std::numeric_limits<float>::infinity())),
-          maxBounds(Vector3(-std::numeric_limits<float>::infinity())) {}
+        : minBounds(Vector3(std::numeric_limits<float>::max())),
+          maxBounds(Vector3(-std::numeric_limits<float>::max())) {}
 
     AABB(const Vector3 &minBounds, const Vector3 &maxBounds) 
         : minBounds(minBounds), maxBounds(maxBounds) {}
@@ -34,11 +35,12 @@ public:
 
     // Ray-AABB intersection
     bool intersect(const Ray &ray, float &tMin, float &tMax) const {
+        constexpr float epsilon = 1e-8f; // Small value to handle precision issues
         tMin = 0.0f;
         tMax = std::numeric_limits<float>::max();
 
         for (int i = 0; i < 3; ++i) {
-            float invD = (ray.direction[i] != 0.0f) ? 1.0f / ray.direction[i] : std::numeric_limits<float>::infinity();
+            float invD = (std::fabs(ray.direction[i]) > epsilon) ? 1.0f / ray.direction[i] : std::numeric_limits<float>::infinity();
             float t0 = (minBounds[i] - ray.origin[i]) * invD;
             float t1 = (maxBounds[i] - ray.origin[i]) * invD;
 
@@ -47,7 +49,7 @@ public:
             tMax = std::min(tMax, t1);           // Update the exit point
 
             // Early exit if there's no intersection
-            if (tMax <= tMin) {
+            if (tMax <= tMin + epsilon) {
                 return false;
             }
         }

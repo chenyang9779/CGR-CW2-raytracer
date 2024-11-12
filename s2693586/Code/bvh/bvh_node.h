@@ -21,20 +21,6 @@ public:
     // Depth limit to prevent infinite recursion
     static const int MAX_DEPTH = 20;
 
-    // Static function to build the BVH with consideration for objects that span the split plane
-
-    // Helper function to partition objects around a pivot
-    std::vector<std::shared_ptr<const Geometry>> partitionAroundMedian(std::vector<std::shared_ptr<const Geometry>> &objects, int splitAxis)
-    {
-        auto median_it = objects.begin() + objects.size() / 2;
-        std::nth_element(objects.begin(), median_it, objects.end(),
-                         [splitAxis](const std::shared_ptr<const Geometry> &a, const std::shared_ptr<const Geometry> &b)
-                         {
-                             return a->centroid()[splitAxis] < b->centroid()[splitAxis];
-                         });
-        return std::vector<std::shared_ptr<const Geometry>>(objects.begin(), median_it);
-    }
-
     static std::unique_ptr<BVHNode> build(std::vector<std::shared_ptr<const Geometry>> objects, int depth = 0)
     {
         auto node = std::make_unique<BVHNode>();
@@ -44,6 +30,10 @@ public:
         if (depth > MAX_DEPTH || objects.size() <= MAX_LEAF_SIZE)
         {
             node->objects = objects;
+            for (const auto &obj : objects)
+            {
+                node->boundingBox.expand(obj->boundingBox());
+            }
             return node;
         }
         
@@ -88,9 +78,15 @@ public:
             }
             else
             {
-                // Spans both partitions, include in both
-                leftObjects.push_back(obj);
-                rightObjects.push_back(obj);
+                // Spans both partitions, assign based on heuristic (e.g., SAH or balancing)
+                if (leftObjects.size() <= rightObjects.size())
+                {
+                    leftObjects.push_back(obj);
+                }
+                else
+                {
+                    rightObjects.push_back(obj);
+                }
             }
         }
 
@@ -130,7 +126,6 @@ public:
                 {
                     closestIntersection = tempIntersection; // Update to the closest intersection
                     hit = true;
-                    // std::cout << "Hit object in leaf node at distance " << tempIntersection.distance << std::endl;
                 }
             }
             return hit; // Return true if any object was hit in this leaf node
@@ -171,5 +166,6 @@ public:
                (right && right->intersectShadowRay(ray, maxDistance));
     }
 };
+
 
 #endif // BVH_NODE_H
