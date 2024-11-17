@@ -38,6 +38,22 @@ SceneData readSceneFromJson(const std::string &fileName)
         int height = config["camera"]["height"];
         float exposure = config["camera"]["exposure"];
 
+        // Extract optional aperture and focalDistance
+        float aperture = 0.0f;      // Default value for aperture (pinhole camera)
+        float focalDistance = 1.0f; // Default value for focal distance
+
+        if (config["camera"].contains("aperture"))
+        {
+            aperture = config["camera"]["aperture"];
+            std::cout << "Aperture found: " << aperture << std::endl;
+        }
+
+        if (config["camera"].contains("focalDistance"))
+        {
+            focalDistance = config["camera"]["focalDistance"];
+            std::cout << "Focal Distance found: " << focalDistance << std::endl;
+        }
+
         // Determine the render mode
         RenderMode renderMode = RenderMode::BINARY;
         if (config.contains("rendermode"))
@@ -50,7 +66,7 @@ SceneData readSceneFromJson(const std::string &fileName)
         }
 
         // Initialize the camera
-        Camera camera(cameraPosition, lookAt, upVector, fov, width, height, exposure);
+        Camera camera(cameraPosition, lookAt, upVector, fov, width, height, exposure, aperture, focalDistance);
 
         // Create SceneData object with render mode
         SceneData sceneData(camera, width, height, renderMode);
@@ -67,7 +83,7 @@ SceneData readSceneFromJson(const std::string &fileName)
                 config["scene"]["backgroundcolor"][1],
                 config["scene"]["backgroundcolor"][2]);
         }
-        
+
         // Extract lights from JSON
         if (config.contains("scene") && config["scene"].contains("lightsources"))
         {

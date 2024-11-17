@@ -17,6 +17,7 @@
 #include "shading/blinn_phong_bvh.cpp"
 #include "geometry/intersection.h"
 #include <memory>
+#include <omp.h>
 
 std::vector<std::pair<float, float>> plot_evenly_distributed_points(int num_samples = 64, float lower_bound = -1.0f, float upper_bound = 1.0f)
 {
@@ -114,6 +115,7 @@ void renderScene(const Camera &camera, const std::vector<Sphere> &spheres, const
     std::vector<uint8_t> image(width * height * 3, 0); // Initialize image buffer
     std::vector<Vector3> hdrColors(width * height);    // Buffer to store HDR colors
     std::vector<std::pair<float, float>> points;
+
     if (antialiasing && renderMode == RenderMode::PHONG)
     {
         points = plot_evenly_distributed_points(16, -1.0f, 1.0f);
@@ -123,7 +125,8 @@ void renderScene(const Camera &camera, const std::vector<Sphere> &spheres, const
         points = {{0.0f, 0.0f}};
     }
 
-    // First pass: calculate HDR colors for each pixel
+// First pass: calculate HDR colors for each pixel
+#pragma omp parallel for collapse(2)
     for (int y = 0; y < height; ++y)
     {
         for (int x = 0; x < width; ++x)
@@ -209,6 +212,7 @@ void renderScene(const Camera &camera, const std::vector<Sphere> &spheres, const
         }
     }
 
+#pragma omp parallel for collapse(2)
     for (int y = 0; y < height; ++y)
     {
         for (int x = 0; x < width; ++x)
@@ -253,6 +257,7 @@ void renderSceneBVH(const Camera &camera, const BVHNode *root, const std::vector
         points = {{0.0f, 0.0f}};
     }
 
+#pragma omp parallel for collapse(2)
     for (int y = 0; y < height; ++y)
     {
         for (int x = 0; x < width; ++x)
@@ -327,6 +332,7 @@ void renderSceneBVH(const Camera &camera, const BVHNode *root, const std::vector
         }
     }
 
+#pragma omp parallel for collapse(2)
     for (int y = 0; y < height; ++y)
     {
         for (int x = 0; x < width; ++x)
