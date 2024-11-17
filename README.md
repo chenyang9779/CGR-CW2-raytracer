@@ -6,11 +6,19 @@ A simple raytracer program built in C++ that supports configurable options for B
 
 ## Features
 
-- Supports JSON configuration files for scene setup.
-- Implements BVH (Bounding Volume Hierarchies) for accelerated ray tracing (optional).
-- Supports tone mapping for realistic image rendering (optional).
-- Anti-aliasing for improved image quality (optional).
-
+- Image write (ppm format)
+- Camera implementation, with coordinate transformation
+- Intersection tests (sphere, triangles, cylinder)
+- Binary image writing (intersection/no intersection)
+- Blinn-Phong shading
+- Shadows
+- Tone mapping (linear) (optional)
+- Reflection
+- Refraction
+- Textures (on sphere, triangle, cylinder)
+- Bounding volume hierarchy as an acceleration structure (optional)
+- Antialiasing via multi-sampling pixels (optional)
+- Defocus in finite-aperture cameras by sampling the camera’s aperture
 ---
 
 ## How to Build
