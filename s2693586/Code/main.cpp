@@ -148,6 +148,7 @@ void renderScene(const Camera &camera, const std::vector<Sphere> &spheres, const
                     {
                         // Binary shading: set color to red if there's an intersection
                         color = Vector3(1.0f, 0.0f, 0.0f);
+                        totalWeight += 1.0f;
                     }
                     else if (renderMode == RenderMode::PHONG)
                     {
@@ -162,8 +163,18 @@ void renderScene(const Camera &camera, const std::vector<Sphere> &spheres, const
                 }
                 else
                 {
-                    color += backgroundColor;
-                    totalWeight += 1.0f;
+                    if (renderMode == RenderMode::BINARY)
+                    {
+                        // Binary shading: set color to red if there's an intersection
+                        color = Vector3(0.0f, 0.0f, 0.0f);
+                        totalWeight += 1.0f;
+                    }
+                    else if (renderMode == RenderMode::PHONG)
+                    {
+
+                        color += backgroundColor;
+                        totalWeight += 1.0f;
+                    }
                 }
             }
 
@@ -266,6 +277,7 @@ void renderSceneBVH(const Camera &camera, const BVHNode *root, const std::vector
                     if (renderMode == RenderMode::BINARY)
                     {
                         color = Vector3(1.0f, 0.0f, 0.0f); // Set to red if intersection
+                        totalWeight += 1.0f;
                     }
                     else if (renderMode == RenderMode::PHONG)
                     {
@@ -275,8 +287,16 @@ void renderSceneBVH(const Camera &camera, const BVHNode *root, const std::vector
                 }
                 else
                 {
-                    color += backgroundColor;
-                    totalWeight += 1.0f;
+                    if (renderMode == RenderMode::BINARY)
+                    {
+                        color = Vector3(0.0f, 0.0f, 0.0f); // Set to red if intersection
+                        totalWeight += 1.0f;
+                    }
+                    else if (renderMode == RenderMode::PHONG)
+                    {
+                        color += backgroundColor;
+                        totalWeight += 1.0f;
+                    }
                 }
             }
             color /= totalWeight;
