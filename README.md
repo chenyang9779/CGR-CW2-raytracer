@@ -22,7 +22,7 @@ A simple raytracer program built in C++ that supports configurable options for B
 
 ### Steps to Build
 
-1. **Clone or Download the Project**:
+1. **cd into the project's directory**:
 
    ```bash
    cd s2693586/Code
