@@ -41,42 +41,6 @@ bool calculateRefraction(const Vector3 &incident, const Vector3 &normal, float e
     }
 }
 
-// Intersection findClosestIntersection(const Ray &ray, const std::vector<Sphere> &spheres,
-//                                      const std::vector<Cylinder> &cylinders, const std::vector<Triangle> &triangles)
-// {
-//     Intersection closestIntersection;
-//     closestIntersection.distance = std::numeric_limits<float>::max();
-
-//     for (const auto &sphere : spheres)
-//     {
-//         Intersection intersection = sphere.intersect(ray);
-//         if (intersection.hit && intersection.distance < closestIntersection.distance)
-//         {
-//             closestIntersection = intersection;
-//         }
-//     }
-
-//     for (const auto &cylinder : cylinders)
-//     {
-//         Intersection intersection = cylinder.intersect(ray);
-//         if (intersection.hit && intersection.distance < closestIntersection.distance)
-//         {
-//             closestIntersection = intersection;
-//         }
-//     }
-
-//     for (const auto &triangle : triangles)
-//     {
-//         Intersection intersection = triangle.intersect(ray);
-//         if (intersection.hit && intersection.distance < closestIntersection.distance)
-//         {
-//             closestIntersection = intersection;
-//         }
-//     }
-
-//     return closestIntersection;
-// }
-
 Vector3 blinnPhongShading(const Intersection &intersection, const Ray &ray, const std::vector<Light> &lights,
                           const std::vector<Sphere> &spheres, const std::vector<Cylinder> &cylinders, const std::vector<Triangle> &triangles,
                           int nbounces, Vector3 backgroundColor)
@@ -188,7 +152,7 @@ Vector3 blinnPhongShading(const Intersection &intersection, const Ray &ray, cons
     }
 
     // Refraction component with new logic
-    Vector3 refractionColor = backgroundColor;
+    Vector3 refractionColor(0.0f, 0.0f, 0.0f);
     if (material.isRefractive && nbounces > 0)
     {
         Vector3 refractionDir;
@@ -204,11 +168,14 @@ Vector3 blinnPhongShading(const Intersection &intersection, const Ray &ray, cons
             {
                 refractionColor = blinnPhongShading(closestRefractionIntersection, refractionRay, lights, spheres, cylinders, triangles, nbounces - 1, backgroundColor);
             }
-
+            else
+            {
+                refractionColor = backgroundColor;
+            }
 
             refractionColor = refractionColor * (1.0f - material.reflectivity);
             // Combine reflection, refraction, and shading color
-            color = (1.0f - fresnelReflectance) * refractionColor + fresnelReflectance * reflectionColor + (1.0f - material.reflectivity) * color;
+            color = (1.0f - fresnelReflectance) * refractionColor + fresnelReflectance * reflectionColor + color;
         }
     }
 

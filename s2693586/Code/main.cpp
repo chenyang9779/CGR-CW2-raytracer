@@ -374,9 +374,9 @@ void renderWithBVH(const SceneData &sceneData, BVHNode *root, const std::string 
 
 int main(int argc, char *argv[])
 {
-    if (argc < 5)
+    if (argc < 6)
     {
-        std::cerr << "Usage: " << argv[0] << " <path_to_json_file> <output_file> <use_bvh (0 or 1)> <apply_tone_map (0 or 1)>" << std::endl;
+        std::cerr << "Usage: " << argv[0] << " <path_to_json_file> <output_file> <use_bvh (0 or 1)> <apply_tone_map (0 or 1)> <antialiasing (0 or 1)>" << std::endl;
         return 1;
     }
 

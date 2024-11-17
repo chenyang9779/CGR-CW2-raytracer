@@ -147,22 +147,50 @@ Intersection Cylinder::intersect(const Ray &ray) const
     return result;
 }
 
-// Cylinder bounding box implementation
 AABB Cylinder::boundingBox() const {
-    // Consider axis orientation and use trigonometry to find bounds in global coordinates
     Vector3 axisNormalized = axis.normalize();
-    Vector3 radiusVec(radius, radius, radius);
-    
-    // Calculate possible extremes in each direction
-    Vector3 minBound = center - axisNormalized * (height * 0.5f) - radiusVec;
-    Vector3 maxBound = center + axisNormalized * (height * 0.5f) + radiusVec;
+    Vector3 halfAxis = axisNormalized * (height * 0.5f);
 
-    // Return an AABB that completely encloses the cylinder
-    return AABB(
-        Vector3(std::min(minBound.x, maxBound.x), std::min(minBound.y, maxBound.y), std::min(minBound.z, maxBound.z)),
-        Vector3(std::max(minBound.x, maxBound.x), std::max(minBound.y, maxBound.y), std::max(minBound.z, maxBound.z))
-    );
+    // Two end points of the cylinder
+    Vector3 baseCenter = center - halfAxis;
+    Vector3 topCenter = center + halfAxis;
+
+    // Generate a set of axis-aligned directions (x, y, z)
+    std::vector<Vector3> directions = {
+        Vector3(1, 0, 0), // x-axis
+        Vector3(0, 1, 0), // y-axis
+        Vector3(0, 0, 1)  // z-axis
+    };
+
+    // Initialize the min and max bounds for the AABB
+    Vector3 minBound(std::numeric_limits<float>::max());
+    Vector3 maxBound(std::numeric_limits<float>::lowest());
+
+    // Check all possible extreme points of the cylinder
+    std::vector<Vector3> extremePoints = {
+        baseCenter + radius * directions[0], baseCenter - radius * directions[0],
+        baseCenter + radius * directions[1], baseCenter - radius * directions[1],
+        baseCenter + radius * directions[2], baseCenter - radius * directions[2],
+        topCenter + radius * directions[0], topCenter - radius * directions[0],
+        topCenter + radius * directions[1], topCenter - radius * directions[1],
+        topCenter + radius * directions[2], topCenter - radius * directions[2]
+    };
+
+    // Evaluate bounding box by comparing all extreme points
+    for (const auto& point : extremePoints) {
+        minBound.x = std::min(minBound.x, point.x);
+        minBound.y = std::min(minBound.y, point.y);
+        minBound.z = std::min(minBound.z, point.z);
+
+        maxBound.x = std::max(maxBound.x, point.x);
+        maxBound.y = std::max(maxBound.y, point.y);
+        maxBound.z = std::max(maxBound.z, point.z);
+    }
+
+    // Return the resulting axis-aligned bounding box
+    return AABB(minBound, maxBound);
 }
+
 
 Vector3 Cylinder::centroid() const {
     return center + (axis.normalize() * (height * 0.5f));
