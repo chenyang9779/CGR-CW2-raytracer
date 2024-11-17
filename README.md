@@ -19,6 +19,8 @@ A simple raytracer program built in C++ that supports configurable options for B
 - Bounding volume hierarchy as an acceleration structure (optional)
 - Antialiasing via multi-sampling pixels (optional)
 - Defocus in finite-aperture cameras by sampling the camera’s aperture
+- Multi-bounce path tracing
+
 ---
 
 ## How to Build
