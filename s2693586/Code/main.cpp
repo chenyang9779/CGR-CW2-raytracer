@@ -5,25 +5,25 @@
 #include <random>
 #include <limits>
 #include <fstream>
-#include "json_reader.cpp"
-#include "camera/camera.cpp"
-#include "camera/ray.h"
-#include "material/material.h"
-#include "camera/light.h"
-#include "shading/blinn_phong.cpp"
-#include "geometry/geometry.cpp"
-#include "tone/tone_mapping.cpp"
-#include "bvh/bvh_node.h"
-#include "shading/blinn_phong_bvh.cpp"
-#include "geometry/intersection.h"
+#include "json_reader.cpp"             // Handles JSON scene file parsing
+#include "camera/camera.cpp"           // Implements the camera functionality
+#include "camera/ray.h"                // Defines the ray structure
+#include "material/material.h"         // Contains material properties
+#include "camera/light.h"              // Defines light sources
+#include "shading/blinn_phong.cpp"     // Implements Blinn-Phong shading
+#include "geometry/geometry.cpp"       // Contains geometric objects and operations
+#include "tone/tone_mapping.cpp"       // Implements tone mapping techniques
+#include "bvh/bvh_node.h"              // Defines BVH (Bounding Volume Hierarchy) nodes
+#include "shading/blinn_phong_bvh.cpp" // Combines Blinn-Phong with BVH
+#include "geometry/intersection.h"     // Handles ray-object intersections
 #include <memory>
-#include <omp.h>
+#include <omp.h> // Enables parallel computing
 
+// Generates evenly distributed points for antialiasing
 std::vector<std::pair<float, float>> plot_evenly_distributed_points(int num_samples = 64, float lower_bound = -1.0f, float upper_bound = 1.0f)
 {
-    // Calculate the approximate grid size
-    int grid_size = static_cast<int>(std::sqrt(num_samples));
-    float step = (upper_bound - lower_bound) / grid_size;
+    int grid_size = static_cast<int>(std::sqrt(num_samples)); // Approximate grid size
+    float step = (upper_bound - lower_bound) / grid_size;     // Distance between grid points
 
     // Generate evenly distributed points with slight jitter
     std::random_device rd;
@@ -35,18 +35,19 @@ std::vector<std::pair<float, float>> plot_evenly_distributed_points(int num_samp
     {
         for (int j = 0; j < grid_size; ++j)
         {
-            float x = lower_bound + i * step + jitter(rng);
-            float y = lower_bound + j * step + jitter(rng);
-            points.emplace_back(x, y);
+            float x = lower_bound + i * step + jitter(rng); // Add jitter to x
+            float y = lower_bound + j * step + jitter(rng); // Add jitter to y
+            points.emplace_back(x, y);                      // Store the jittered point
         }
     }
     return points;
 }
 
+// Writes a binary image to a PPM file
 void writeBinaryImageToPPM(const std::string &outputFileName, int width, int height, const std::vector<unsigned char> &image)
 {
     // Open the output file in binary mode
-    std::ofstream outFile(outputFileName, std::ios::binary);
+    std::ofstream outFile(outputFileName, std::ios::binary); // Open file in binary mode
 
     // Check if the file is open
     if (outFile.is_open())
@@ -72,7 +73,7 @@ void writeBinaryImageToPPM(const std::string &outputFileName, int width, int hei
 void setPixelColor(int x, int y, int width, const Vector3 &toneMappedColor, std::vector<uint8_t> &image)
 {
     // Calculate the index in the 1D image vector
-    int flippedX = width - 1 - x;
+    int flippedX = width - 1 - x; // Flip x-axis to account for image orientation
     int index = (y * width + flippedX) * 3;
 
     // Set the RGB values, clamping them to [0, 255] and converting to uint8_t
@@ -81,7 +82,7 @@ void setPixelColor(int x, int y, int width, const Vector3 &toneMappedColor, std:
     image[index + 2] = static_cast<uint8_t>(std::min(toneMappedColor.z * 255.0f, 255.0f)); // B
 }
 
-// Function to collect all geometry objects from SceneData
+// Collects all geometric objects (spheres, cylinders, triangles) from the scene data
 std::vector<std::shared_ptr<const Geometry>> collectGeometries(const SceneData &sceneData)
 {
     std::vector<std::shared_ptr<const Geometry>> geometries;
@@ -107,6 +108,7 @@ std::vector<std::shared_ptr<const Geometry>> collectGeometries(const SceneData &
     return geometries;
 }
 
+// Renders the scene without acceleration structures
 void renderScene(const Camera &camera, const std::vector<Sphere> &spheres, const std::vector<Cylinder> &cylinders,
                  const std::vector<Triangle> &triangles, const std::vector<Light> &lights,
                  RenderMode renderMode, int width, int height, const Vector3 &backgroundColor, int nbounces,
@@ -116,6 +118,7 @@ void renderScene(const Camera &camera, const std::vector<Sphere> &spheres, const
     std::vector<Vector3> hdrColors(width * height);    // Buffer to store HDR colors
     std::vector<std::pair<float, float>> points;
 
+    // Generate antialiasing points if needed
     if (antialiasing && renderMode == RenderMode::PHONG)
     {
         points = plot_evenly_distributed_points(16, -1.0f, 1.0f);
@@ -131,15 +134,14 @@ void renderScene(const Camera &camera, const std::vector<Sphere> &spheres, const
     {
         for (int x = 0; x < width; ++x)
         {
-            Vector3 color = Vector3(0.0f, 0.0f, 0.0f);
-            int flippedX = width - 1 - x;
+            Vector3 color = Vector3(0.0f, 0.0f, 0.0f); // Initialize pixel color
             float totalWeight = 0.0f;
 
             for (const auto &point : points)
             {
-                // printf("(%.3f)\n",dis(rng));
                 float u = x + point.first;
                 float v = y + point.second;
+
                 // Generate the ray from the camera
                 Ray ray = camera.generateRay(static_cast<float>(u), static_cast<float>(v));
                 Intersection closestIntersection = findClosestIntersection(ray, spheres, cylinders, triangles);
@@ -147,25 +149,25 @@ void renderScene(const Camera &camera, const std::vector<Sphere> &spheres, const
                 // Set pixel value based on render mode
                 if (closestIntersection.hit)
                 {
+                    // Handle intersection cases
                     if (renderMode == RenderMode::BINARY)
                     {
                         // Binary shading: set color to red if there's an intersection
-                        color = Vector3(1.0f, 0.0f, 0.0f);
+                        color = Vector3(1.0f, 0.0f, 0.0f); // Binary shading
                         totalWeight += 1.0f;
                     }
                     else if (renderMode == RenderMode::PHONG)
                     {
 
                         Vector3 tmpColor = blinnPhongShading(closestIntersection, ray, lights, spheres, cylinders, triangles, nbounces, backgroundColor);
-                        // if (tmpColor != backgroundColor)
-                        // {
+
                         color += tmpColor;
                         totalWeight += 1.0f;
-                        // }
                     }
                 }
                 else
                 {
+                    // Handle cases with no intersection
                     if (renderMode == RenderMode::BINARY)
                     {
                         // Binary shading: set color to red if there's an intersection
@@ -181,7 +183,7 @@ void renderScene(const Camera &camera, const std::vector<Sphere> &spheres, const
                 }
             }
 
-            color /= totalWeight;
+            color /= totalWeight; // Normalize color
 
             // Store color in the HDR buffer
             hdrColors[y * width + x] = color;
@@ -197,7 +199,7 @@ void renderScene(const Camera &camera, const std::vector<Sphere> &spheres, const
     {
         for (const auto &color : hdrColors)
         {
-            if (color != backgroundColor)
+            if (color != backgroundColor) // Exclude background colour
             {
                 minColor = Vector3(
                     std::min(minColor.x, color.x),
@@ -227,10 +229,10 @@ void renderScene(const Camera &camera, const std::vector<Sphere> &spheres, const
                 Vector3 hdrColor = hdrColors[y * width + x];
                 if (applyToneMap)
                 {
-                    hdrColor = toneMap(hdrColor, camera.exposure, minColor, maxColor, backgroundColor); // Use ACES tone mapping
+                    hdrColor = toneMap(hdrColor, camera.exposure, minColor, maxColor, backgroundColor); // Apply tone mapping
                 }
 
-                setPixelColor(x, y, width, hdrColor, image);
+                setPixelColor(x, y, width, hdrColor, image); // Write pixel color
             }
         }
     }
@@ -384,7 +386,7 @@ int main(int argc, char *argv[])
     std::string outputFileName = argv[2];
     bool useBVH = (std::stoi(argv[3]) != 0);       // Use BVH if the third argument is 1
     bool applyToneMap = (std::stoi(argv[4]) != 0); // Apply tone mapping if the fourth argument is 1
-    bool antialiasing = (std::stoi(argv[5]) != 0);
+    bool antialiasing = (std::stoi(argv[5]) != 0); // Enable antialiasing if the fifth argument is 1
 
     // Load the scene from the JSON file
     SceneData sceneData = readSceneFromJson(fileName);

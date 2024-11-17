@@ -2,6 +2,7 @@
 #include <iostream>
 #include <fstream>
 
+// Reads scene data from a JSON file and returns a SceneData object
 SceneData readSceneFromJson(const std::string &fileName)
 {
     // Open the JSON file
@@ -16,7 +17,7 @@ SceneData readSceneFromJson(const std::string &fileName)
     json config;
     try
     {
-        inputFile >> config;
+        inputFile >> config; // Read and parse JSON data
     }
     catch (const json::parse_error &e)
     {
@@ -33,10 +34,10 @@ SceneData readSceneFromJson(const std::string &fileName)
         Vector3 cameraPosition = Vector3(config["camera"]["position"][0], config["camera"]["position"][1], config["camera"]["position"][2]);
         Vector3 lookAt = Vector3(config["camera"]["lookAt"][0], config["camera"]["lookAt"][1], config["camera"]["lookAt"][2]);
         Vector3 upVector = Vector3(config["camera"]["upVector"][0], config["camera"]["upVector"][1], config["camera"]["upVector"][2]);
-        float fov = config["camera"]["fov"];
-        int width = config["camera"]["width"];
-        int height = config["camera"]["height"];
-        float exposure = config["camera"]["exposure"];
+        float fov = config["camera"]["fov"];           // Field of view
+        int width = config["camera"]["width"];         // Image width
+        int height = config["camera"]["height"];       // Image height
+        float exposure = config["camera"]["exposure"]; // Exposure value
 
         // Extract optional aperture and focalDistance
         float aperture = 0.0f;      // Default value for aperture (pinhole camera)
@@ -55,7 +56,7 @@ SceneData readSceneFromJson(const std::string &fileName)
         }
 
         // Determine the render mode
-        RenderMode renderMode = RenderMode::BINARY;
+        RenderMode renderMode = RenderMode::BINARY; // Default to BINARY mode
         if (config.contains("rendermode"))
         {
             std::string modeStr = config["rendermode"];
@@ -71,11 +72,13 @@ SceneData readSceneFromJson(const std::string &fileName)
         // Create SceneData object with render mode
         SceneData sceneData(camera, width, height, renderMode);
 
+        // Extract number of bounces for recursive ray tracing
         if (config.contains("nbounces"))
         {
             sceneData.nbounces = config["nbounces"];
         }
 
+        // Extract background color
         if (config.contains("scene") && config["scene"].contains("backgroundcolor"))
         {
             sceneData.backgroundColor = Vector3(
@@ -89,9 +92,9 @@ SceneData readSceneFromJson(const std::string &fileName)
         {
             for (const auto &light : config["scene"]["lightsources"])
             {
-                Vector3 position = Vector3(light["position"][0], light["position"][1], light["position"][2]);
-                Vector3 intensity = Vector3(light["intensity"][0], light["intensity"][1], light["intensity"][2]);
-                sceneData.lights.emplace_back(position, intensity);
+                Vector3 position = Vector3(light["position"][0], light["position"][1], light["position"][2]);     // Light position
+                Vector3 intensity = Vector3(light["intensity"][0], light["intensity"][1], light["intensity"][2]); // Light intensity
+                sceneData.lights.emplace_back(position, intensity);                                               // Add to the list of lights
             }
         }
 
@@ -101,13 +104,17 @@ SceneData readSceneFromJson(const std::string &fileName)
             for (const auto &shape : config["scene"]["shapes"])
             {
                 // Extract material properties if available
+
+                // Default material properties
                 Material material(Vector3(0.8, 0.8, 0.8), Vector3(1.0, 1.0, 1.0), 0.9, 0.1, 20.0, false, 1.0);
+
+                // Parse material properties if provided
                 if (shape.contains("material"))
                 {
                     material.diffuseColor = Vector3(shape["material"]["diffusecolor"][0], shape["material"]["diffusecolor"][1], shape["material"]["diffusecolor"][2]);
                     material.specularColor = Vector3(shape["material"]["specularcolor"][0], shape["material"]["specularcolor"][1], shape["material"]["specularcolor"][2]);
-                    material.kd = shape["material"]["kd"];
-                    material.ks = shape["material"]["ks"];
+                    material.kd = shape["material"]["kd"]; // Diffuse coefficient
+                    material.ks = shape["material"]["ks"]; // Specular coefficient
                     material.specularExponent = shape["material"]["specularexponent"];
                     material.isReflective = shape["material"]["isreflective"];
                     material.reflectivity = shape["material"]["reflectivity"];
@@ -115,6 +122,7 @@ SceneData readSceneFromJson(const std::string &fileName)
                     material.refractiveIndex = shape["material"]["refractiveindex"];
                 }
 
+                // Parse different shape types
                 if (shape["type"] == "sphere")
                 {
                     Vector3 center = Vector3(shape["center"][0], shape["center"][1], shape["center"][2]);
@@ -139,6 +147,7 @@ SceneData readSceneFromJson(const std::string &fileName)
             }
         }
 
+        // Return the parsed scene data
         return sceneData;
     }
     catch (const json::exception &e)

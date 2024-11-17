@@ -7,35 +7,42 @@ Intersection Sphere::intersect(const Ray &ray) const
 
     // Vector from ray origin to sphere center
     Vector3 oc = ray.origin - center;
+
+    // Compute quadratic coefficients for the ray-sphere intersection equation
     float a = ray.direction.dot(ray.direction);
     float b = 2.0f * oc.dot(ray.direction);
     float c = oc.dot(oc) - radius * radius;
     float discriminant = b * b - 4 * a * c;
 
+    // Check if the discriminant indicates an intersection
     if (discriminant < 0)
     {
         return result; // No intersection
     }
     else
     {
+        // Compute the two solutions of the quadratic equation
         float sqrtDiscriminant = std::sqrt(discriminant);
         float t1 = (-b - sqrtDiscriminant) / (2.0f * a);
         float t2 = (-b + sqrtDiscriminant) / (2.0f * a);
 
+        // Choose the nearest positive intersection point
         float t = (t1 > 0 && t2 > 0) ? std::min(t1, t2) : ((t1 > 0) ? t1 : t2);
         if (t > 0)
         {
+            // Populate intersection result
             result.hit = true;
             result.distance = t;
-            result.point = ray.origin + ray.direction * t;
-            result.normal = (result.point - center).normalize();
-            result.material = material;
+            result.point = ray.origin + ray.direction * t;       // Compute intersection point
+            result.normal = (result.point - center).normalize(); // Compute surface normal
+            result.material = material;                          // Assign material properties
         }
     }
     return result;
 }
 
-AABB Sphere::boundingBox() const {
+AABB Sphere::boundingBox() const
+{
     Vector3 radiusVec(radius, radius, radius);
     return AABB(center - radiusVec, center + radiusVec);
 }
@@ -147,7 +154,8 @@ Intersection Cylinder::intersect(const Ray &ray) const
     return result;
 }
 
-AABB Cylinder::boundingBox() const {
+AABB Cylinder::boundingBox() const
+{
     Vector3 axisNormalized = axis.normalize();
     Vector3 halfAxis = axisNormalized * (height * 0.5f);
 
@@ -173,11 +181,11 @@ AABB Cylinder::boundingBox() const {
         baseCenter + radius * directions[2], baseCenter - radius * directions[2],
         topCenter + radius * directions[0], topCenter - radius * directions[0],
         topCenter + radius * directions[1], topCenter - radius * directions[1],
-        topCenter + radius * directions[2], topCenter - radius * directions[2]
-    };
+        topCenter + radius * directions[2], topCenter - radius * directions[2]};
 
     // Evaluate bounding box by comparing all extreme points
-    for (const auto& point : extremePoints) {
+    for (const auto &point : extremePoints)
+    {
         minBound.x = std::min(minBound.x, point.x);
         minBound.y = std::min(minBound.y, point.y);
         minBound.z = std::min(minBound.z, point.z);
@@ -191,8 +199,8 @@ AABB Cylinder::boundingBox() const {
     return AABB(minBound, maxBound);
 }
 
-
-Vector3 Cylinder::centroid() const {
+Vector3 Cylinder::centroid() const
+{
     return center + (axis.normalize() * (height * 0.5f));
 }
 
@@ -243,28 +251,25 @@ Intersection Triangle::intersect(const Ray &ray) const
 }
 
 // Triangle bounding box implementation
-AABB Triangle::boundingBox() const {
+AABB Triangle::boundingBox() const
+{
     Vector3 minBound(
         std::min({v0.x, v1.x, v2.x}),
         std::min({v0.y, v1.y, v2.y}),
-        std::min({v0.z, v1.z, v2.z})
-    );
+        std::min({v0.z, v1.z, v2.z}));
 
     Vector3 maxBound(
         std::max({v0.x, v1.x, v2.x}),
         std::max({v0.y, v1.y, v2.y}),
-        std::max({v0.z, v1.z, v2.z})
-    );
+        std::max({v0.z, v1.z, v2.z}));
 
     // Expand the bounds slightly to avoid degenerate AABBs
     const float epsilon = 1e-3f;
-    if (minBound == maxBound) {
+    if (minBound == maxBound)
+    {
         minBound -= Vector3(epsilon, epsilon, epsilon);
         maxBound += Vector3(epsilon, epsilon, epsilon);
     }
 
     return AABB(minBound, maxBound);
 }
-
-
-

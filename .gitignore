@@ -6,3 +6,6 @@
 *.idea
 test
 s2693586/Code/Raytracer
+*CMakeFiles
+cmake_install.cmake
+CMakeCache.txt
