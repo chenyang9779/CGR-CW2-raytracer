@@ -28,8 +28,13 @@ Vector3 blinnPhongShadingBVH(const Intersection &intersection, const Ray &ray, c
         Intersection shadowIntersection;
         bool inShadow = root->intersectShadowRay(shadowRay, distanceToLight);
 
-        // Ambient component
-        Vector3 ambient = material.kd * material.diffuseColor * light.intensity;
+        // Calculate attenuation based on distance to light
+        float k1 = 0.1f; // Linear attenuation coefficient
+        float k2 = 0.01f; // Quadratic attenuation coefficient
+        float attenuation = 1.0f / (1.0f + k1 * distanceToLight + k2 * distanceToLight * distanceToLight);
+        Vector3 effectiveLightIntensity = light.intensity * attenuation;
+        
+        Vector3 ambient = material.kd * material.diffuseColor * effectiveLightIntensity;
 
         if (inShadow)
         {
@@ -39,12 +44,12 @@ Vector3 blinnPhongShadingBVH(const Intersection &intersection, const Ray &ray, c
 
         // Diffuse component
         float diff = std::max(normal.dot(lightDir), 0.0f);
-        Vector3 diffuse = material.kd * diff * material.diffuseColor * light.intensity;
+        Vector3 diffuse = material.kd * diff * material.diffuseColor * effectiveLightIntensity;
 
         // Specular component
         Vector3 halfDir = (viewDir + lightDir).normalize();
         float spec = std::pow(std::max(normal.dot(halfDir), 0.0f), material.specularExponent);
-        Vector3 specular = material.ks * spec * material.specularColor * light.intensity;
+        Vector3 specular = material.ks * spec * material.specularColor * effectiveLightIntensity;
 
         color += ambient + diffuse + specular;
     }

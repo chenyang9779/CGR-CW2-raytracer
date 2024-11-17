@@ -2,6 +2,8 @@
 #include <vector>
 #include <chrono>
 #include <limits>
+#include <random>
+#include <limits>
 #include <fstream>
 #include "json_reader.cpp"
 #include "camera/camera.cpp"
@@ -13,7 +15,32 @@
 #include "tone/tone_mapping.cpp"
 #include "bvh/bvh_node.h"
 #include "shading/blinn_phong_bvh.cpp"
+#include "geometry/intersection.h"
 #include <memory>
+
+std::vector<std::pair<float, float>> plot_evenly_distributed_points(int num_samples = 64, float lower_bound = -1.0f, float upper_bound = 1.0f)
+{
+    // Calculate the approximate grid size
+    int grid_size = static_cast<int>(std::sqrt(num_samples));
+    float step = (upper_bound - lower_bound) / grid_size;
+
+    // Generate evenly distributed points with slight jitter
+    std::random_device rd;
+    std::mt19937 rng(rd());
+    std::uniform_real_distribution<float> jitter(-step / 5, step / 5); // Small jitter to avoid perfect alignment
+
+    std::vector<std::pair<float, float>> points;
+    for (int i = 0; i < grid_size; ++i)
+    {
+        for (int j = 0; j < grid_size; ++j)
+        {
+            float x = lower_bound + i * step + jitter(rng);
+            float y = lower_bound + j * step + jitter(rng);
+            points.emplace_back(x, y);
+        }
+    }
+    return points;
+}
 
 void writeBinaryImageToPPM(const std::string &outputFileName, int width, int height, const std::vector<unsigned char> &image)
 {
@@ -82,64 +109,65 @@ std::vector<std::shared_ptr<const Geometry>> collectGeometries(const SceneData &
 void renderScene(const Camera &camera, const std::vector<Sphere> &spheres, const std::vector<Cylinder> &cylinders,
                  const std::vector<Triangle> &triangles, const std::vector<Light> &lights,
                  RenderMode renderMode, int width, int height, const Vector3 &backgroundColor, int nbounces,
-                 const std::string &outputFileName, bool applyToneMap)
+                 const std::string &outputFileName, bool applyToneMap, bool antialiasing)
 {
     std::vector<uint8_t> image(width * height * 3, 0); // Initialize image buffer
     std::vector<Vector3> hdrColors(width * height);    // Buffer to store HDR colors
+    std::vector<std::pair<float, float>> points;
+    if (antialiasing && renderMode == RenderMode::PHONG)
+    {
+        points = plot_evenly_distributed_points(16, -1.0f, 1.0f);
+    }
+    else
+    {
+        points = {{0.0f, 0.0f}};
+    }
 
     // First pass: calculate HDR colors for each pixel
     for (int y = 0; y < height; ++y)
     {
         for (int x = 0; x < width; ++x)
         {
+            Vector3 color = Vector3(0.0f, 0.0f, 0.0f);
             int flippedX = width - 1 - x;
+            float totalWeight = 0.0f;
 
-            // Generate the ray from the camera
-            Ray ray = camera.generateRay(static_cast<float>(x), static_cast<float>(y));
-            Intersection closestIntersection;
-            closestIntersection.distance = std::numeric_limits<float>::max();
+            for (const auto &point : points)
+            {
+                // printf("(%.3f)\n",dis(rng));
+                float u = x + point.first;
+                float v = y + point.second;
+                // Generate the ray from the camera
+                Ray ray = camera.generateRay(static_cast<float>(u), static_cast<float>(v));
+                Intersection closestIntersection = findClosestIntersection(ray, spheres, cylinders, triangles);
 
-            // Check intersections with all shapes
-            for (const auto &sphere : spheres)
-            {
-                Intersection intersection = sphere.intersect(ray);
-                if (intersection.hit && intersection.distance < closestIntersection.distance)
+                // Set pixel value based on render mode
+                if (closestIntersection.hit)
                 {
-                    closestIntersection = intersection;
+                    if (renderMode == RenderMode::BINARY)
+                    {
+                        // Binary shading: set color to red if there's an intersection
+                        color = Vector3(1.0f, 0.0f, 0.0f);
+                    }
+                    else if (renderMode == RenderMode::PHONG)
+                    {
+
+                        Vector3 tmpColor = blinnPhongShading(closestIntersection, ray, lights, spheres, cylinders, triangles, nbounces, backgroundColor);
+                        // if (tmpColor != backgroundColor)
+                        // {
+                        color += tmpColor;
+                        totalWeight += 1.0f;
+                        // }
+                    }
                 }
-            }
-            for (const auto &cylinder : cylinders)
-            {
-                Intersection intersection = cylinder.intersect(ray);
-                if (intersection.hit && intersection.distance < closestIntersection.distance)
+                else
                 {
-                    closestIntersection = intersection;
-                }
-            }
-            for (const auto &triangle : triangles)
-            {
-                Intersection intersection = triangle.intersect(ray);
-                if (intersection.hit && intersection.distance < closestIntersection.distance)
-                {
-                    closestIntersection = intersection;
+                    color += backgroundColor;
+                    totalWeight += 1.0f;
                 }
             }
 
-            // Set pixel value based on render mode
-            Vector3 color = backgroundColor; // Default to background color
-            if (closestIntersection.hit)
-            {
-                if (renderMode == RenderMode::BINARY)
-                {
-                    // Binary shading: set color to red if there's an intersection
-                    color = Vector3(1.0f, 0.0f, 0.0f);
-                }
-                else if (renderMode == RenderMode::PHONG)
-                {
-                    // Phong shading: use Blinn-Phong shading to calculate color
-                    color = blinnPhongShading(closestIntersection, ray, lights, spheres, cylinders, triangles, nbounces, backgroundColor);
-                }
-            }
+            color /= totalWeight;
 
             // Store color in the HDR buffer
             hdrColors[y * width + x] = color;
@@ -198,37 +226,60 @@ void renderScene(const Camera &camera, const std::vector<Sphere> &spheres, const
 
 void renderSceneBVH(const Camera &camera, const BVHNode *root, const std::vector<Light> &lights,
                     RenderMode renderMode, int width, int height, const Vector3 &backgroundColor,
-                    int nbounces, const std::string &outputFileName, bool applyToneMap)
+                    int nbounces, const std::string &outputFileName, bool applyToneMap, bool antialiasing)
 {
     // Implementation of rendering using the BVH acceleration structure
     std::vector<uint8_t> image(width * height * 3, 0); // Image buffer
     std::vector<Vector3> hdrColors(width * height);    // Buffer to store HDR colors
+    std::vector<std::pair<float, float>> points;
+
+    if (antialiasing && renderMode == RenderMode::PHONG)
+    {
+        points = plot_evenly_distributed_points(16, -1.0f, 1.0f);
+    }
+    else
+    {
+        points = {{0.0f, 0.0f}};
+    }
 
     for (int y = 0; y < height; ++y)
     {
         for (int x = 0; x < width; ++x)
         {
+            Vector3 color = Vector3(0.0f, 0.0f, 0.0f);
             int flippedX = width - 1 - x;
+            float totalWeight = 0.0f;
 
-            // Generate ray from camera
-            Ray ray = camera.generateRay(static_cast<float>(x), static_cast<float>(y));
-            Intersection closestIntersection;
-            closestIntersection.distance = std::numeric_limits<float>::max();
-
-            // Check for intersection with BVH root
-            Vector3 color = backgroundColor; // Default to background color
-            if (root->intersect(ray, closestIntersection))
+            for (const auto &point : points)
             {
-                // If intersection occurs, determine color based on render mode
-                if (renderMode == RenderMode::BINARY)
+                // Generate ray from camera
+                float u = x + point.first;
+                float v = y + point.second;
+                Ray ray = camera.generateRay(static_cast<float>(u), static_cast<float>(v));
+                Intersection closestIntersection;
+                closestIntersection.distance = std::numeric_limits<float>::max();
+
+                // Check for intersection with BVH root
+                if (root->intersect(ray, closestIntersection))
                 {
-                    color = Vector3(1.0f, 0.0f, 0.0f); // Set to red if intersection
+                    // If intersection occurs, determine color based on render mode
+                    if (renderMode == RenderMode::BINARY)
+                    {
+                        color = Vector3(1.0f, 0.0f, 0.0f); // Set to red if intersection
+                    }
+                    else if (renderMode == RenderMode::PHONG)
+                    {
+                        color += blinnPhongShadingBVH(closestIntersection, ray, lights, root, nbounces - 1, backgroundColor);
+                        totalWeight += 1.0f;
+                    }
                 }
-                else if (renderMode == RenderMode::PHONG)
+                else
                 {
-                    color = blinnPhongShadingBVH(closestIntersection, ray, lights, root, nbounces - 1, backgroundColor);
+                    color += backgroundColor;
+                    totalWeight += 1.0f;
                 }
             }
+            color /= totalWeight;
             hdrColors[y * width + x] = color;
         }
     }
@@ -281,18 +332,18 @@ void renderSceneBVH(const Camera &camera, const BVHNode *root, const std::vector
     writeBinaryImageToPPM(outputFileName, width, height, image);
 }
 
-void renderWithoutBVH(const SceneData &sceneData, const std::string &outputFileName, bool applyToneMap)
+void renderWithoutBVH(const SceneData &sceneData, const std::string &outputFileName, bool applyToneMap, bool antialiasing)
 {
     renderScene(sceneData.camera, sceneData.spheres, sceneData.cylinders, sceneData.triangles,
                 sceneData.lights, sceneData.renderMode, sceneData.width, sceneData.height,
-                sceneData.backgroundColor, sceneData.nbounces, outputFileName, applyToneMap);
+                sceneData.backgroundColor, sceneData.nbounces, outputFileName, applyToneMap, antialiasing);
 }
 
-void renderWithBVH(const SceneData &sceneData, BVHNode *root, const std::string &outputFileName, bool applyToneMap)
+void renderWithBVH(const SceneData &sceneData, BVHNode *root, const std::string &outputFileName, bool applyToneMap, bool antialiasing)
 {
     renderSceneBVH(sceneData.camera, root, sceneData.lights, sceneData.renderMode,
                    sceneData.width, sceneData.height, sceneData.backgroundColor,
-                   sceneData.nbounces, outputFileName, applyToneMap);
+                   sceneData.nbounces, outputFileName, applyToneMap, antialiasing);
 }
 
 int main(int argc, char *argv[])
@@ -307,6 +358,7 @@ int main(int argc, char *argv[])
     std::string outputFileName = argv[2];
     bool useBVH = (std::stoi(argv[3]) != 0);       // Use BVH if the third argument is 1
     bool applyToneMap = (std::stoi(argv[4]) != 0); // Apply tone mapping if the fourth argument is 1
+    bool antialiasing = (std::stoi(argv[5]) != 0);
 
     // Load the scene from the JSON file
     SceneData sceneData = readSceneFromJson(fileName);
@@ -314,6 +366,7 @@ int main(int argc, char *argv[])
     // Print whether BVH and tone mapping are enabled
     std::cout << "BVH enabled: " << (useBVH ? "Yes" : "No") << std::endl;
     std::cout << "Tone Mapping enabled: " << (applyToneMap ? "Yes" : "No") << std::endl;
+    std::cout << "Antialiasing enabled: " << (antialiasing ? "Yes" : "No") << std::endl;
 
     // Start timing the render process
     auto start = std::chrono::high_resolution_clock::now();
@@ -325,12 +378,12 @@ int main(int argc, char *argv[])
 
         // Build the BVH using collected geometries
         std::unique_ptr<BVHNode> root = BVHNode::build(geometries);
-        renderWithBVH(sceneData, root.get(), outputFileName, applyToneMap);
+        renderWithBVH(sceneData, root.get(), outputFileName, applyToneMap, antialiasing);
     }
     else
     {
         // Render without BVH
-        renderWithoutBVH(sceneData, outputFileName, applyToneMap);
+        renderWithoutBVH(sceneData, outputFileName, applyToneMap, antialiasing);
     }
 
     // Stop timing the render process
