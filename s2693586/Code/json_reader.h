@@ -4,7 +4,7 @@
 // Includes
 #include <string>
 #include <vector>
-#include "nlohmann/json.hpp"   // Includes the nlohmann/json library for JSON parsing
+#include "external/json.hpp"   // Includes the nlohmann/json library for JSON parsing
 #include "camera/camera.h"     // Camera class for view setup
 #include "camera/light.h"      // Light definitions
 #include "material/material.h" // Material properties for rendering
