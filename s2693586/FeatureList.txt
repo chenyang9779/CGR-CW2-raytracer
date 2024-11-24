@@ -16,21 +16,29 @@
 (c) BRDF sampling 
 (d) Light sampling 
 
+For compiling the project:
+
+$ cd /path/to/Code
+$ mkdir build
+$ cd build
+$ cmake ..
+$ make
+
 Some cmdlines for replicating the images. (replace the path with relative paths)
 
-./Raytracer ../jsons/binary_primitives.json ../../TestSuite/binary_primitives.ppm 0 0 0
-./Raytracer ../jsons/mirror_image.json ../../TestSuite/mirror_image.ppm 0 0 0
-./Raytracer ../jsons/mirror_image.json ../../TestSuite/mirror_image_antialiasing.ppm 0 0 1
-./Raytracer ../jsons/mirror_image.json ../../TestSuite/mirror_image_antialiasing_toneMap.ppm 0 1 1
-./Raytracer ../jsons/scene.json ../../TestSuite/scene_binary.ppm 0 0 0
-./Raytracer ../jsons/scene_phong.json ../../TestSuite/scene_phong.ppm 0 0 0
-./Raytracer ../jsons/scene_phong.json ../../TestSuite/scene_phong_antialising.ppm 0 0 1
-./Raytracer ../jsons/scene_phong.json ../../TestSuite/scene_phong_antialising_toneMap.ppm 0 1 1
-./Raytracer ../jsons/scene_aperture.json ../../TestSuite/scene_aperture.ppm 0 0 0
-./Raytracer ../jsons/scene_aperture.json ../../TestSuite/scene_aperture_antialiasing.ppm 0 0 1
-./Raytracer ../jsons/scene_aperture.json ../../TestSuite/scene_aperture_antialiasing_toneMap.ppm 0 1 1
-./Raytracer ../jsons/simple_phong.json ../../TestSuite/simple_phong.ppm 0 0 0
-./Raytracer ../jsons/simple_phong.json ../../TestSuite/simple_phong_antialiasing.ppm 0 0 1
-./Raytracer ../jsons/simple_phong.json ../../TestSuite/simple_phong_antialiasing_toneMap.ppm 0 1 1
-./Raytracer ../jsons/complex.json ../../TestSuite/complex.ppm 0 0 0
-./Raytracer ../jsons/complex.json ../../TestSuite/complex_BVH.ppm 1 0 0
+$ ./Raytracer ../jsons/binary_primitives.json ../../TestSuite/binary_primitives.ppm 0 0 0
+$ ./Raytracer ../jsons/mirror_image.json ../../TestSuite/mirror_image.ppm 0 0 0
+$ ./Raytracer ../jsons/mirror_image.json ../../TestSuite/mirror_image_antialiasing.ppm 0 0 1
+$ ./Raytracer ../jsons/mirror_image.json ../../TestSuite/mirror_image_antialiasing_toneMap.ppm 0 1 1
+$ ./Raytracer ../jsons/scene.json ../../TestSuite/scene_binary.ppm 0 0 0
+$ ./Raytracer ../jsons/scene_phong.json ../../TestSuite/scene_phong.ppm 0 0 0
+$ ./Raytracer ../jsons/scene_phong.json ../../TestSuite/scene_phong_antialising.ppm 0 0 1
+$ ./Raytracer ../jsons/scene_phong.json ../../TestSuite/scene_phong_antialising_toneMap.ppm 0 1 1
+$ ./Raytracer ../jsons/scene_aperture.json ../../TestSuite/scene_aperture.ppm 0 0 0
+$ ./Raytracer ../jsons/scene_aperture.json ../../TestSuite/scene_aperture_antialiasing.ppm 0 0 1
+$ ./Raytracer ../jsons/scene_aperture.json ../../TestSuite/scene_aperture_antialiasing_toneMap.ppm 0 1 1
+$ ./Raytracer ../jsons/simple_phong.json ../../TestSuite/simple_phong.ppm 0 0 0
+$ ./Raytracer ../jsons/simple_phong.json ../../TestSuite/simple_phong_antialiasing.ppm 0 0 1
+$ ./Raytracer ../jsons/simple_phong.json ../../TestSuite/simple_phong_antialiasing_toneMap.ppm 0 1 1
+$ ./Raytracer ../jsons/complex.json ../../TestSuite/complex.ppm 0 0 0
+$ ./Raytracer ../jsons/complex.json ../../TestSuite/complex_BVH.ppm 1 0 0
